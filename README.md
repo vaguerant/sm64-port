@@ -16,6 +16,7 @@ A prior copy of the game is required to extract the assets.
  - Experimental Stereo 3D support; add build flag `ENABLE_N3DS_3D_MODE=1` to try it out
  - Support injection of [SMDH](https://www.3dbrew.org/wiki/SMDH) file into the .3dsx
      - Change the `icon.png` in the base of this repository before building.
+ - Experimental Mini-Map; bottom screen displays an overview of the current level
 
 ## Building
 

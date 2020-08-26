@@ -7,11 +7,11 @@
 #include <stdbool.h>
 
 #include "gfx_3ds.h"
+#include "gfx_3ds_minimap.h"
+#include "gfx_3ds_menu.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
-
-#include "gfx_3ds_menu.h"
 
 #define TEXTURE_POOL_SIZE 4096
 
@@ -795,6 +795,8 @@ static void gfx_citro3d_init(void)
     C3D_DepthMap(true, -1.0f, 0);
     C3D_DepthTest(false, GPU_LEQUAL, GPU_WRITE_ALL);
     C3D_AlphaTest(true, GPU_GREATER, 0x00);
+
+    gfx_3ds_init_minimap();
 }
 
 static void gfx_citro3d_start_frame(void)
@@ -808,7 +810,6 @@ static void gfx_citro3d_start_frame(void)
         gfx_citro3d_set_viewport(0, 0, 400, 240);
         sCurrentGfx3DSMode = gGfx3DSMode;
     }
-
     C3D_RenderTargetClear(gTarget, C3D_CLEAR_ALL, 0x000000FF, 0xFFFFFFFF);
     C3D_RenderTargetClear(gTargetBottom, C3D_CLEAR_ALL, 0x000000FF, 0xFFFFFFFF);
 #ifdef ENABLE_N3DS_3D_MODE
@@ -823,11 +824,13 @@ static void gfx_citro3d_on_resize(void)
 
 static void gfx_citro3d_end_frame(void)
 {
+    C3D_FrameDrawOn(gTargetBottom);
+    uint32_t tris = gfx_3ds_draw_minimap(sVboBuffer, sBufIdx);
+    if (gShowConfigMenu)
+        gfx_3ds_menu_draw(sVboBuffer, sBufIdx + tris, true);
+
     float target_fps = 30.0f;
 
-    // TOOD: draw the minimap here
-    gfx_3ds_menu_draw(sVboBuffer, sBufIdx, gShowConfigMenu);
-    
     C3D_FrameEnd(0);
     if (C3D_GetProcessingTime() < 1000.0f / target_fps)
         gspWaitForVBlank();

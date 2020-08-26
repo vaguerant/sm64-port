@@ -416,11 +416,8 @@ ifeq ($(COMPILER),gcc)
   CC        := $(CROSS)gcc
 endif
 
-ifeq ($(TARGET_N64),1)
-  TARGET_CFLAGS := -nostdinc -I include/libc -DTARGET_N64 -D_LANGUAGE_C
-  CC_CFLAGS := -fno-builtin
-endif
-
+TARGET_CFLAGS := -nostdinc -I include/libc -DTARGET_N64 -D_LANGUAGE_C
+CC_CFLAGS := -fno-builtin
 INCLUDE_CFLAGS := -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I .
 
 # Check code syntax with host compiler
@@ -495,8 +492,8 @@ ifeq ($(TARGET_WEB),1)
   PLATFORM_LDFLAGS := -lm -no-pie -s TOTAL_MEMORY=20MB -g4 --source-map-base http://localhost:8080/ -s "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"
 endif
 ifeq ($(TARGET_N3DS),1)
-  CTRULIB  :=  $(DEVKITPRO)/libctru
-  LIBDIRS  := $(CTRULIB)
+  CTRULIB := $(DEVKITPRO)/libctru
+  LIBDIRS := $(CTRULIB)
   export LIBPATHS  :=  $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
   PLATFORM_CFLAGS  := -mtp=soft -DTARGET_N3DS -DARM11 -DosGetTime=n64_osGetTime -D_3DS -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations -fomit-frame-pointer -ffast-math $(foreach dir,$(LIBDIRS),-I$(dir)/include)
   PLATFORM_LDFLAGS := $(LIBPATHS) -lcitro3d -lctru -lm -specs=3dsx.specs -g -marm -mthumb-interwork -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
@@ -891,8 +888,8 @@ SMDH_DESCRIPTION ?= Super Mario 64 3DS Port
 SMDH_AUTHOR ?= mkst
 SMDH_ICON := icon.smdh
 
-$(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(SMDH_ICON)
-	$(LD) -L $(BUILD_DIR) -o $@.elf $(O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_T3X_O) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
+$(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(SMDH_ICON)
+	$(LD) -L $(BUILD_DIR) -o $@.elf $(O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(MINIMAP_T3X_O) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
 	3dsxtool $@.elf $@ --smdh=$(BUILD_DIR)/$(SMDH_ICON)
 
 # stolen from /opt/devkitpro/devkitARM/base_tools
@@ -901,9 +898,11 @@ define bin2o
 endef
 
 # TODO: simplify dependency chain
-$(BUILD_DIR)/src/pc/gfx/gfx_citro3d.o: $(BUILD_DIR)/src/pc/gfx/gfx_3ds.o
-$(BUILD_DIR)/src/pc/gfx/gfx_3ds.o: $(BUILD_DIR)/src/pc/gfx/gfx_3ds_menu.o
+$(BUILD_DIR)/src/pc/gfx/gfx_citro3d.o: $(MINIMAP_O)
+$(BUILD_DIR)/src/pc/gfx/gfx_3ds.o: $(MINIMAP_O)
+$(BUILD_DIR)/src/pc/gfx/gfx_3ds_minimap.o: $(MINIMAP_O)
 $(BUILD_DIR)/src/pc/gfx/gfx_3ds_menu.o: $(MINIMAP_T3X_HEADERS)
+$(MINIMAP_O): $(MINIMAP_T3X_HEADERS)
 
 %.t3x.o $(BUILD_DIR)/%_t3x.h: %.t3x
 	$(bin2o)
@@ -913,7 +912,6 @@ $(BUILD_DIR)/src/pc/gfx/gfx_3ds_menu.o: $(MINIMAP_T3X_HEADERS)
 
 %.t3s: %.png
 	@printf -- "-f rgba -z auto\n../../../../../$(<)\n" > $(BUILD_DIR)/$@
-
 
 %.smdh: %.png
 	smdhtool --create "$(SMDH_TITLE)" "$(SMDH_DESCRIPTION)" "$(SMDH_AUTHOR)" $< $(BUILD_DIR)/$@
